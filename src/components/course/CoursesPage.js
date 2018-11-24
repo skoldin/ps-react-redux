@@ -27,7 +27,7 @@ class CoursesPage extends React.Component {
           value={"Add Course"}
           className={"btn btn-primary"}
           onClick={this.redirectToAddCoursePage}/>
-        <CourseList courses={courses}/>
+        {courses.length ? <CourseList courses={courses}/> : null}
       </div>
     );
   }
@@ -44,6 +44,16 @@ CoursesPage.propTypes = {
 // returns an object that contains the properties that we would like to expose to our component
 // ownProps are props that are attached to this component
 function mapStateToProps(state, ownProps) {
+  state.courses.sort((a, b) => {
+    if ( a.title < b.title ) {
+      return -1;
+    } else if ( a.title > b.title ) {
+      return 1;
+    }
+
+    return 0;
+  });
+
   return {
     courses: state.courses // this is the data passed to our root reducer
   };

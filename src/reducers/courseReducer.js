@@ -9,13 +9,21 @@ export default function courseReducer(state = initialState.courses, action) {
     case types.CREATE_COURSE_SUCCESS:
       return [
         ...state,
-        Object.assign({}, action.savedCourse)
+        Object.assign({}, action.course)
       ];
 
     case types.UPDATE_COURSE_SUCCESS:
       return [
-        ...state.filter(course => course.id !== action.course.id), // get an array of all courses except for those that are being updated
-        Object.assign({}, action.savedCourse) // include the course that is being updated to the array
+        ...state.filter(course => {
+          return course.id !== action.course.id;
+        }), // get an array of all courses except for those that are being updated
+        Object.assign({}, action.course) // include the course that is being updated to the array
+      ];
+    case types.DELETE_COURSE_SUCCESS:
+      return [
+        ...state.filter(course => {
+          return course.id !== action.id;
+        })
       ];
     default:
       return state;

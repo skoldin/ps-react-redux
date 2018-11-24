@@ -3,18 +3,38 @@ import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 import * as courseActions from '../../actions/courseActions';
 import CourseForm from './CourseForm';
+import {authorsFormattedForDropdown} from "../../selectors/selectors"; //eslint-disable-line import/no-named-as-default
+import toastr from 'toastr';
+import { withRouter } from 'react-router';
 
-class ManageCoursePage extends React.Component {
+export class ManageCoursePage extends React.Component {
   constructor( props, context ) {
     super( props, context );
 
     this.state = {
       course: Object.assign({}, props.course), // this is just for initializing state
-      errors: {}
+      errors: {},
+      saving: false,
+      saved: true
     };
 
     this.updateCourseState = this.updateCourseState.bind(this);
     this.saveCourse = this.saveCourse.bind(this);
+  }
+
+  componentDidMount() {
+    this.props.router.setRouteLeaveHook(this.props.route, () => {
+      if ( ! this.state.saved ) {
+        return 'You have unsaved changes, are you sure you do not want to save them?';
+      }
+    });
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.course.id != nextProps.course.id) {
+      // this is to populate form when existing course is loaded directly
+      this.setState({course: Object.assign({}, nextProps.course)});
+    }
   }
 
   updateCourseState(event) {
@@ -22,24 +42,56 @@ class ManageCoursePage extends React.Component {
     let course = Object.assign({}, this.state.course);
 
     course[field] = event.target.value;
-    return this.setState({course: course});
+    return this.setState({course: course, saved: false});
+  }
+
+  courseFormIsValid() {
+    let formIsValid = true;
+    let errors = {};
+
+    if (this.state.course.title.length < 5) {
+      errors.title = 'Title must be at least 5 characters.';
+      formIsValid = false;
+    }
+
+    this.setState({errors});
+
+    return formIsValid;
   }
 
   saveCourse(event) {
     event.preventDefault();
-    this.props.actions.saveCourse(this.state.course);
+
+    if ( ! this.courseFormIsValid() ) {
+      return;
+    }
+
+    this.setState({saving: true});
+    this.props.actions.saveCourse(this.state.course)
+      .then(() => this.redirect())
+      .catch(error => {
+        toastr.error(error);
+        this.setState({saving: false, saved: true});
+      });
+  }
+
+  redirect() {
+    this.setState({saving: false});
+    toastr.success('Course saved');
+    // redirect to courses page using react router
+    this.context.router.push('/courses');
   }
 
   render() {
     return (
       <div>
-        <h1>Manage Course</h1>
         <CourseForm
           onChange={this.updateCourseState}
           onSave={this.saveCourse}
           allAuthors={this.props.authors}
           course={this.state.course}
           errors={this.state.errors}
+          saving={this.state.saving}
         />
       </div>
     );
@@ -52,20 +104,34 @@ ManageCoursePage.propTypes = {
   actions: PropTypes.object.isRequired
 };
 
+ManageCoursePage.contextTypes = {
+  router: PropTypes.object
+};
+
+function getCourseById( courses, id ) {
+  const course = courses.filter(course => course.id === id);
+
+  if ( course.length ) {
+    return course[0];
+  }
+
+  return null;
+}
+
 const mapStateToProps = ( state, ownProps ) => {
+  const courseId = ownProps.params.id; // from the path '/course/:id'
+
+  console.log(courseId);
+
   let course = {id: '', watchHref: '', title: '', authorId: '', length: '', category: ''};
 
-  // this is the place to transform the data to a format that we will use
-  const authorsFormattedForDropdown = state.authors.map(author => {
-    return {
-      value: author.id,
-      text: author.firstName + ' ' + author.lastName
-    };
-  });
+  if ( courseId && state.courses.length > 0 ) {
+    course = getCourseById(state.courses, courseId);
+  }
 
   return {
     course: course,
-    authors: authorsFormattedForDropdown
+    authors: authorsFormattedForDropdown(state.authors)
   };
 };
 
@@ -75,4 +141,4 @@ const mapDispatchToProps = ( dispatch ) => {
   };
 };
 
-export default connect( mapStateToProps, mapDispatchToProps )( ManageCoursePage );
+export default connect( mapStateToProps, mapDispatchToProps )( withRouter(ManageCoursePage) );

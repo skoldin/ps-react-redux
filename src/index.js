@@ -1,3 +1,4 @@
+/*eslint-disable import/default */
 import 'babel-polyfill';
 import React from 'react';
 import { render } from 'react-dom';
@@ -10,6 +11,7 @@ import { loadAuthors } from "./actions/authorActions";
 
 import './styles/styles.css';
 import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
+import '../node_modules/toastr/build/toastr.min.css';
 
 // we could pass initial state in, e.g. for server rendering. This will override the default parameters passed in from reducers
 const store = configureStore();

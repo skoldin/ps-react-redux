@@ -1,5 +1,6 @@
 import React, { PropTypes } from 'react';
 import { Link } from 'react-router';
+import DeleteLink from './DeleteLink';
 
 const CourseListRow = ({course}) => {
   return (
@@ -9,6 +10,7 @@ const CourseListRow = ({course}) => {
       <td>{course.authorId}</td>
       <td>{course.category}</td>
       <td>{course.length}</td>
+      <td><DeleteLink courseId={course.id}/></td>
     </tr>
   );
 };
